@@ -12,27 +12,39 @@ def _cart_id(request):
 
 
 def add_cart(request, product_id):
-    product = Product.objects.get(id=product_id)  # get the product
+    # ambil produk berdasarkan produk id di form {% url 'add_cart' single_product.id %} template (product_detail.html)
+    # product_id dari add_cart/<int:product_id>/ dri path url
+    product = Product.objects.get(id=product_id)
+
+    # ini untuk nyimpen produk variasi sementara di array sebelum dipake lagi dibawahnya
+    # dapetnya produk (berdasar id) & variannya (size & color)
     product_variation = []
+
+    # karena method form POST maka kita pake untuk memastikan bahwa form tersebut POST method di headernya
     if request.method == "POST":
+
+        # request.POST akan mengambil data color & size di POST pas user klick button submit
         for item in request.POST:
             key = item
             value = request.POST[key]
 
             try:
+                # ambil variasi produk di model dengan key=color | size & value= any
                 variation = Variation.objects.get(
                     product=product,
                     variation_category__iexact=key,
                     variation_value__iexact=value,
                 )
+
+                # masukin ke array
                 product_variation.append(variation)
             except:
                 pass
     try:
-        cart = Cart.objects.get(
-            cart_id=_cart_id(request)
-        )  # get the carte using the cart_id present in the session
+        # ambil object cart berdasar sessionnya
+        cart = Cart.objects.get(cart_id=_cart_id(request))
     except Cart.DoesNotExist:
+        # kalau session id nya ga ada bikin yang baru & save di db
         cart = Cart.objects.create(cart_id=_cart_id(request))
         cart.Save()
 
@@ -59,9 +71,6 @@ def add_cart(request, product_id):
             if len(product_variation) > 0:
                 item.variations.clear()
                 item.variations.add(*product_variation)
-                # cart_item.variations.clear()
-                # for item in product_variation:
-                #     cart_item.variations.add(item)
             item.save()
     else:
         cart_item = CartItem.objects.create(
